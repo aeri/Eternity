@@ -38,30 +38,28 @@ defmodule Perfectos do
     encuentra_perfectos({a, b}, [])
   end 
 
-  def fn1(pid) do
-    time1 = :os.system_time(:millisecond)
-    trabajo = 10000/4
-    assign(tasks)
-    time2 = :os.system_time(:millisecond)    
-    send(pid, {time2 - time1, perfectos})
+  def assign([{w_pid,t}|tail) do
+    send(w_pid, {:req, {m_pid,t}})
+    assign(tail)
   end
   
-  def master() do
+  def master(lista) do
     receive do
       {pid, :perfectos} -> spawn(fn->fn1(pid)end)
                     
-      {pid, :perfectos_ht} ->	time1 = :os.system_time(:millisecond)
-								perfectos = encuentra_perfectos({1, 10000})
+      {pid_c, :perfectos_ht} ->	time1 = :os.system_time(:millisecond)
+								receive do
+								  {pid, tarea, lista_perfectos}
+								end
 								time2 = :os.system_time(:millisecond)			
-								send(pid, {time2 - time1, perfectos})
+								send(pid_c, {time2 - time1, perfectos})
     end    
-    servidor()
+    master(lista)
   end 
   def worker() do
     receive do
-      {pid, inicio, fin, :perfectos} -> send(pid, encuentra_perfectos({inicio, fin}))
-      {pid, inicio, fin, :perfectos_ht} -> if :rand.uniform(100)>60, do: Process.sleep(round(:rand.uniform(100)/100 * 2000))
-						send(pid, encuentra_perfectos({inicio, fin})
+      {pid, tarea, inicio, fin} -> if :rand.uniform(100)>60, do: Process.sleep(round(:rand.uniform(100)/100 * 2000))
+						send(pid, tarea, encuentra_perfectos({inicio, fin})
     end
   end
 end

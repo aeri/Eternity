@@ -1,3 +1,3 @@
-<div style="text-align:center"><img src ="https://i.imgur.com/6XaTVIz.png" /></div>
+![Imgur](https://i.imgur.com/6XaTVIz.png)
 # Eternity
 Prácticas de Sistemas Distribuidos

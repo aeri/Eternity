@@ -38,9 +38,9 @@ defmodule Perfectos do
     encuentra_perfectos({a, b}, [])
   end 
 
-  def assign([{wpid,t}|tail], tarea, cliente, time1, num) do 
-    send(wpid, {self(), tarea, cliente, 1, 10000})
-    if num != 3 && length(tail) != 0 do
+  def assign([wpid|tail], tarea, cliente, time1, num) do 
+    if num != 3 && length([wpid|tail]) != 0 do
+    	send(wpid, {self(), tarea, cliente, 1, 10000})
     	assign(tail, tarea, cliente, time1, num+1)
     else
         tail

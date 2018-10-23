@@ -40,10 +40,11 @@ defmodule Perfectos do
 
   def assign([wpid|tail], tarea, cliente, time1, num) do 
     if num != 3 do
-      if length(tail) != 0 do
-    	 send(wpid, {self(), tarea, cliente, 1, 10000})
+     if length(tail) > 0 do
+    	 send(wpid, {self(), tarea, cliente, 1, 10000, time1})
     	 assign(tail, tarea, cliente, time1, num+1)
-      else
+     else
+   	send(wpid, {self(), tarea, cliente, 1, 10000, time1})
         tail
       end
     else
@@ -56,8 +57,11 @@ defmodule Perfectos do
   end
     
   def master(lista, tarealeer, tareaenviar, tareas) do
+    lista
     receive do
       {pid_c, :perfectos_ht} ->	time1 = :os.system_time(:millisecond)
+	       IO.puts("b")
+	       lista
 	       listadespues = assign(lista, tareaenviar, pid_c, time1, 1)
     	       master(listadespues, tarealeer, tareaenviar+1, tareas++[tareaenviar])
       {wpid, numtarea, cliente, lista, tiempo, :worker} -> 
@@ -72,13 +76,16 @@ defmodule Perfectos do
     end
   end 
   def worker() do
+    IO.puts("a")
     receive do
       {pid, tarea, cliente, inicio, fin, tiempo} -> if :rand.uniform(100)>60, do: Process.sleep(round(:rand.uniform(100)/100 * 2000))
+			IO.puts("c")
     			send(pid, {self(), tarea, cliente, encuentra_perfectos({inicio, fin}), :worker})
     end
+    worker()
   end
   def master_init(lista) do
-    master(lista, lista, 1, [])
+    master(lista, 1, 1, [])
   end
 end
 

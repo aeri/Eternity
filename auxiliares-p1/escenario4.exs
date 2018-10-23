@@ -38,47 +38,39 @@ defmodule Perfectos do
     encuentra_perfectos({a, b}, [])
   end 
 
-  def assign([{w_pid,t}|tail], tarea) do
-    send(w_pid, {tarea, 1, 10000})
-    assign(tail, tarea)
-  end
-  
-  def assign([], tarea) do
-    IO.puts("Se ha mandado la tarea")
-  end
-
-  def fn1(inicio, fin, tarea, pid) do
-    if :rand.uniform(100)>60, do: Process.sleep(round(:rand.uniform(100)/100 * 2000))
-    send(pid, {tarea, encuentra_perfectos({inicio, fin}), :worker})
-  end
-
-  def collect(tarea, pid, tiempo) do
-  	receive do
-	   {numtarea, lista_perfectos, :worker} -> if tarea==numtarea do 
-		time2 = :os.system_time(:millisecond)			
-	   	send(pid, {lista_perfectos, time2 - tiempo})
-	   else
-	   	collect(tarea, pid, tiempo)
-	   end
-	end
+  def assign([{wpid,t}|tail], tarea, cliente, time1, num) do 
+    send(wpid, {self(), tarea, cliente, 1, 10000})
+    if num != 3 && length(tail) != 0 do
+    	assign(tail, tarea, cliente, time1, num+1)
+    else
+        tail
+    end
   end
     
-  def master(lista, tarea) do
+  def master(lista, tarealeer, tareaenviar, tareas) do
     receive do
       {pid_c, :perfectos_ht} ->	time1 = :os.system_time(:millisecond)
-	       assign(lista, tarea)
-	       spawn(fn->collect(tarea, pid_c, time1)end)
-	       _ = tarea + 1
-	    end    
-    master(lista, tarea)
+	       listadespues = assign(lista, tareaenviar, pid_c, time1, 1)
+    	       master(listadespues, tarealeer, tareaenviar+1, tareas++[tareaenviar])
+      {wpid, numtarea, cliente, lista, tiempo, :worker} -> 
+      						 if length(tareas) != length(List.delete(tareas,numtarea)) do
+						 time2 = :os.system(:millisecond)
+                                                 send(cliente, {time2 - tiempo, lista})
+						 List.insert(lista, -1, wpid)
+    						 master(lista, tarealeer+1, tareaenviar, List.delete(tareas, numtarea))
+						 else
+						 master(lista, tarealeer, tareaenviar, tareas)
+						 end
+    end
   end 
   def worker() do
     receive do
-      {pid, tarea, inicio, fin} -> spawn(fn->fn1(inicio, fin, tarea, pid)end)
+      {pid, tarea, cliente, inicio, fin, tiempo} -> if :rand.uniform(100)>60, do: Process.sleep(round(:rand.uniform(100)/100 * 2000))
+    			send(pid, {self(), tarea, cliente, encuentra_perfectos({inicio, fin}), :worker})
     end
   end
   def master_init(lista) do
-    master(lista, 1)
+    master(lista, lista, 1, [])
   end
 end
 

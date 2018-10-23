@@ -39,12 +39,20 @@ defmodule Perfectos do
   end 
 
   def assign([wpid|tail], tarea, cliente, time1, num) do 
-    if num != 3 && length([wpid|tail]) != 0 do
-    	send(wpid, {self(), tarea, cliente, 1, 10000})
-    	assign(tail, tarea, cliente, time1, num+1)
-    else
+    if num != 3 do
+      if length(tail) != 0 do
+    	 send(wpid, {self(), tarea, cliente, 1, 10000})
+    	 assign(tail, tarea, cliente, time1, num+1)
+      else
         tail
+      end
+    else
+        [wpid|tail]
     end
+  end
+
+  def assign([], tarea, cliente, time1, num) do
+    []
   end
     
   def master(lista, tarealeer, tareaenviar, tareas) do

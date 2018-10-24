@@ -38,49 +38,52 @@ defmodule Perfectos do
     encuentra_perfectos({a, b}, [])
   end 
 
-  def assign([wpid|tail], tarea, cliente, time1, num) do 
-    if num != 3 do
-     if length(tail) > 0 do
-    	 send(wpid, {self(), tarea, cliente, 1, 10000, time1})
+  def assign([pid|tail], tarea, cliente, time1, num) do 
+    IO.puts(length(tail))
+    if num <= 3 do
+      if length(tail) >= 1 do
+    	 send(pid, {self(), tarea, cliente, 1, 10000, time1})
     	 assign(tail, tarea, cliente, time1, num+1)
-     else
-   	send(wpid, {self(), tarea, cliente, 1, 10000, time1})
-        tail
+      else
+    	 send(pid, {self(), tarea, cliente, 1, 10000, time1})
+         []
       end
     else
-        [wpid|tail]
+      [pid|tail]
     end
-  end
-
-  def assign([], tarea, cliente, time1, num) do
-    []
   end
     
   def master(lista, tarealeer, tareaenviar, tareas) do
-    lista
+    if length(lista) < 1 do
+    receive do
+       {wpid, numtarea, cliente, resultado, tiempo, :worker} -> 
+      						 if length(tareas) != length(List.delete(tareas,numtarea)) do
+						   time2 = :os.system_time(:millisecond)
+                                                   send(cliente, {time2 - tiempo, resultado})
+    						   master(lista++[wpid], tarealeer+1, tareaenviar, List.delete(tareas, numtarea))
+						 else
+						   master(lista++[wpid], tarealeer, tareaenviar, tareas)
+						 end
+       end
+    end
     receive do
       {pid_c, :perfectos_ht} ->	time1 = :os.system_time(:millisecond)
-	       IO.puts("b")
-	       lista
 	       listadespues = assign(lista, tareaenviar, pid_c, time1, 1)
     	       master(listadespues, tarealeer, tareaenviar+1, tareas++[tareaenviar])
-      {wpid, numtarea, cliente, lista, tiempo, :worker} -> 
+      {wpid, numtarea, cliente, resultado, tiempo, :worker} -> 
       						 if length(tareas) != length(List.delete(tareas,numtarea)) do
-						 time2 = :os.system(:millisecond)
-                                                 send(cliente, {time2 - tiempo, lista})
-						 List.insert(lista, -1, wpid)
-    						 master(lista, tarealeer+1, tareaenviar, List.delete(tareas, numtarea))
+						 time2 = :os.system_time(:millisecond)
+                                                 send(cliente, {time2 - tiempo, resultado})
+    						 master(lista++[wpid], tarealeer+1, tareaenviar, List.delete(tareas, numtarea))
 						 else
-						 master(lista, tarealeer, tareaenviar, tareas)
+						 master(lista++[wpid], tarealeer, tareaenviar, tareas)
 						 end
     end
   end 
   def worker() do
-    IO.puts("a")
     receive do
       {pid, tarea, cliente, inicio, fin, tiempo} -> if :rand.uniform(100)>60, do: Process.sleep(round(:rand.uniform(100)/100 * 2000))
-			IO.puts("c")
-    			send(pid, {self(), tarea, cliente, encuentra_perfectos({inicio, fin}), :worker})
+    			send(pid, {self(), tarea, cliente, encuentra_perfectos({inicio, fin}), tiempo, :worker})
     end
     worker()
   end

@@ -4,7 +4,7 @@ defmodule Usuario do
 			{pid, :chooseSeqNum}  ->
 				new_requesting_critical_section = true
 				new_our_sequence_number = highest_sequence_number + 1
-				send(pid, {new_our_sequence_number, :ok})
+				send pid, {new_our_sequence_number, :ok} 
 				mutex(new_requesting_critical_section, new_our_sequence_number, highest_sequence_number, reply_deferred, outstanding_reply)
 			{pid, n, :asignOutstandingReply} ->
 				new_outstanding_reply = n - 1
@@ -13,12 +13,12 @@ defmodule Usuario do
 			{pid, :checkOutstandingReply} ->
 				send(pid, {outstanding_reply, :ok})
 				mutex(requesting_critical_section, our_sequence_number, highest_sequence_number, reply_deferred, outstanding_reply)
-			{pid, :release} ->
+            {pid, :release} ->
 				new_requesting_critical_section = false
 				send(pid, {:ok})
 				mutex(new_requesting_critical_section, our_sequence_number, highest_sequence_number, reply_deferred, outstanding_reply)
 			{pid, j, :checkDeferred} ->
-				send(pid, {reply_deferred[j], :ok})
+				send(pid, {Enum.at(reply_deferred,j-1), :ok})
 				mutex(requesting_critical_section, our_sequence_number, highest_sequence_number, reply_deferred, outstanding_reply)
 			{pid, j, value, :modifyDeferred} ->
 				new_reply_deferred = List.replace_at(reply_deferred, j, value)
@@ -40,51 +40,53 @@ defmodule Usuario do
 					send(pid, {false, :ok})
 				end
 				mutex(requesting_critical_section, our_sequence_number, highest_sequence_number, reply_deferred, outstanding_reply)
-			{pid, :subOutstandingReply} ->
+			{pid, direccion, :subOutstandingReply} ->
 				new_outstanding_reply = outstanding_reply - 1
 				if new_outstanding_reply == 0 do
-					send(pid, {:ok_0})
+					send {:distributed, direccion}, {:ok_0}
 				end
-				send(pid, {:ok})
+				send pid, {:ok}
 				mutex(requesting_critical_section, our_sequence_number, highest_sequence_number, reply_deferred, new_outstanding_reply)
 		end
 	end
 
-	defp distributed_critical_section(mypid, num, lista) do
-		mensaje = IO.gets "Introduce mensaje\n"
-		send(mypid, {:chooseSeqNum})
+	defp distributed_critical_section(mypid, num, lista, mydireccion) do
+		mensaje = String.trim(IO.gets "Introduce mensaje\n") # Se guarda el mensaje sin un salto de línea al final
+		send mypid, {self(), :chooseSeqNum}
 		receive do
-			{_, numSeq, :ok} -> # Se queda bloqueado esperando un signal (:ok) del proceso mutex
-				send(mypid, {length(lista), :asignOutstandingReply})
+			{numSeq, :ok} -> # Se queda bloqueado esperando un signal (:ok) del proceso mutex
+				send mypid, {self(), length(lista), :asignOutstandingReply} 
 				receive do
-					{_, :ok} ->
-                        for node <- lista do
-                            if node[1] != num do
-                                send(node[0], {num, numSeq, :request})
+					{:ok} ->
+                        for {id, direccion} <- lista do
+                            if id != num do
+                                send {:receive_request, direccion}, {mydireccion, num, numSeq, :request}
                             end
                         end
                         receive do
-                            {_, :ok_0} -> # Se espera a que haya una respuesta (:reply) del resto de nodos
-                                for node <- lista do
-                                    send(node[0], {mensaje, :mensaje}) # Al entrar a la seccion critica manda el mensaje a todos los nodos
+                            {:ok_0} -> # Se espera a que haya una respuesta (:reply) del resto de nodos
+                                for {id, direccion} <- lista do
+                                    if id != num do
+                                        send {:show_messages, direccion}, {mydireccion, mensaje, :mensaje} # Al entrar a la seccion critica manda el mensaje a todos los nodos
+                                    end
                                 end
-                                send(mypid, {:release})
+                                send mypid, {self(),:release}
                                 receive do
-                                    {_, :ok} ->
-                                        for node <- lista do
-                                            send(mypid, {node[1], :checkDeferred})
+                                    {:ok} ->
+                                        for {id, direccion} <- lista do
+                                            send mypid, {self(), id, :checkDeferred}
                                             receive do
-                                                {_, value, :ok} ->
+                                                {value, :ok} ->
                                                     if value do
-                                                        send(mypid, {node[1], false, :modifyDeferred})
+                                                        send mypid, {self(), id, false, :modifyDeferred}
                                                         receive do
-                                                            {_, :ok} ->
-                                                                send(node[0], {:reply}) # Mandar un mensaje de REPLY al nodo
+                                                            {:ok} ->
+                                                                send {:receive_reply, direccion}, {:reply} # Mandar un mensaje de REPLY al nodo
                                                         end
                                                     end
                                             end
                                         end
-                                        distributed_critical_section(mypid, num, lista)
+                                        distributed_critical_section(mypid, num, lista, mydireccion)
                                     end
                             end
                     end
@@ -92,21 +94,21 @@ defmodule Usuario do
     end
 	defp receive_request_messages(mypid, num) do
 		receive do
-			{node_pid, j, k, :request} ->
-				send(mypid, {k, :maxSeq})
+			{node_dir, j, k, :request} ->
+				send mypid, {self(), k, :maxSeq}
 				receive do
-					{_, :ok} ->
-                        send(mypid, {k, j, num, :checkDeferIt})
+					{:ok} ->
+                        send mypid, {self(), k, j, num, :checkDeferIt}
                         receive do
-                            {_, defer_it, :ok} ->
+                            {defer_it, :ok} ->
                                 if defer_it do
-                                    send(mypid, {j, true, :modifyDeferred})
+                                    send mypid, {self(), j, true, :modifyDeferred}
                                     receive do
-                                        {_, :ok} ->
+                                        {:ok} ->
                                             receive_request_messages(mypid, num)
                                     end
                                 else
-                                    send(node_pid, {:reply})
+                                    send {:receive_reply, node_dir}, {:reply}
                                     receive_request_messages(mypid, num)
                                 end
                         end
@@ -116,10 +118,10 @@ defmodule Usuario do
 
 	defp receive_reply_messages(mypid) do
 		receive do
-			{_, :reply} ->
-                send(mypid, {:subOutstandingReply})
+			{:reply} ->
+                send mypid, {self(), Node.self(),:subOutstandingReply}
                 receive do
-                    {_, :ok} ->
+                    {:ok} ->
                         receive_reply_messages(mypid)
                 end
         end
@@ -127,18 +129,24 @@ defmodule Usuario do
 	
 	defp show_messages() do
 		receive do
-			{pid, mensaje, :mensaje} ->
-				IO.puts pid
-				IO.puts mensaje
+			{direccion, mensaje, :mensaje} ->
+				IO.puts to_string(direccion) <> ": " <> mensaje
 		end
 		show_messages()
 	end
 	
-	def init(mypid, lista, mynum) do
-        spawn(fn->distributed_critical_section(mypid, mynum, lista)end)
-        spawn(fn->receive_request_messages(mypid, mynum)end)
-        spawn(fn->receive_reply_messages(mypid)end)
-        spawn(fn->show_messages()end)
-        mutex(false, false, 0, List.duplicate(false, length(lista)), length(lista) - 1)
+	def init(lista, mynum) do
+        mypid = spawn(fn->mutex(false, false, 0, List.duplicate(false, length(lista)), length(lista) - 1)end)
+        spawn(fn->
+                Process.register(self(), :distributed)
+                distributed_critical_section(mypid, mynum, lista, Node.self())end)
+        spawn(fn->
+                Process.register(self(), :receive_request)
+                receive_request_messages(mypid, mynum)end)
+        spawn(fn->
+                Process.register(self(), :receive_reply)
+                receive_reply_messages(mypid)end)
+        Process.register(self(), :show_messages)
+        show_messages()
     end
 end

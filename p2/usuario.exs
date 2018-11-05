@@ -135,10 +135,10 @@ defmodule Usuario do
 	end
 	
 	def init(mypid, lista, mynum) do
-        spawn(fn->mutex(false, false, 0, List.duplicate(false, length(lista)), length(lista) - 1)end)
         spawn(fn->distributed_critical_section(mypid, mynum, lista)end)
         spawn(fn->receive_request_messages(mypid, mynum)end)
         spawn(fn->receive_reply_messages(mypid)end)
         spawn(fn->show_messages()end)
+        mutex(false, false, 0, List.duplicate(false, length(lista)), length(lista) - 1)
     end
 end

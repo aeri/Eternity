@@ -1,0 +1,1 @@
+Usuario.init(self(), [[{:nodo1, :"nodo1@ip"}, 1],[{:nodo2, :"nodo2@ip"}], 2], 1)

@@ -21,7 +21,7 @@ defmodule Usuario do
 				send(pid, {Enum.at(reply_deferred,j-1), :ok})
 				mutex(requesting_critical_section, our_sequence_number, highest_sequence_number, reply_deferred, outstanding_reply)
 			{pid, j, value, :modifyDeferred} ->
-				new_reply_deferred = List.replace_at(reply_deferred, j, value)
+				new_reply_deferred = List.replace_at(reply_deferred, j-1, value)
 				send(pid, {:ok})
 				mutex(requesting_critical_section, our_sequence_number, highest_sequence_number, new_reply_deferred, outstanding_reply)
 			{pid, k, :maxSeq} ->

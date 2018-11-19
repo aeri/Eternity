@@ -48,10 +48,10 @@ defmodule Worker do
         end
         Process.sleep(delay)
         receive do
-            {:req, {m_pid,m}} -> case numero do
-                1 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send(m_pid, suma(m))
-                2 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send(m_pid, suma_divisores_propios(m))
-                3 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send(m_pid, lista_divisores_propios(m))
+            {:req, m_pid, m} -> case numero do
+                1 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {lista_divisores_propios(m)}
+                2 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {suma_divisores_propios(m)}
+                3 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {suma(m)}
             end
         end
         loopI(worker_type, numero)

@@ -58,7 +58,7 @@ defmodule Worker do
   
     defp loopI(worker_type, numero) do
         delay = case worker_type do
-            :crash -> if Enum.random(Enum.to_list(0..100)) > 75, do: System.halt()
+            :crash -> System.halt()
             :timing -> Enum.random(Enum.to_list(0..100))*1000
             _ ->  0
         end

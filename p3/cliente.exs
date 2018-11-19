@@ -8,3 +8,6 @@ defmodule Cliente do
         end
     end
 end
+
+
+Cliente.init({:master, :"master@127.0.0.1"}, 1, 10000)

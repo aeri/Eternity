@@ -1,0 +1,1 @@
+Master.init([{:worker1, :"worker1@127.0.0.1"}], [{:worker2, :"worker2@127.0.0.1"}], [{:worker3, :"worker3@127.0.0.1"}])

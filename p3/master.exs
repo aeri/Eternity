@@ -47,8 +47,10 @@ defmodule Master do
         if(numProcesos == 0) do
             receive do
                 {:timeout, n, nodo1, nodo2, nodo3} ->
+                    IO.puts "Recibido timeout"
                     loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, [n] ++ listaNumeros, listaResultados)
                 {:success, result, n, nodo1, nodo2, nodo3} ->
+                    IO.puts "Recibido resultado"
                     if (result == n) do
                         loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, listaNumeros, listaResultados ++ [result])
                     else
@@ -56,7 +58,8 @@ defmodule Master do
                     end
             end
         else
-            spawn(fn->funcion(self(), hd(lista1), hd(lista2), hd(lista3), hd(listaNumeros))end)
+            pid = self()
+            spawn(fn->funcion(pid, hd(lista1), hd(lista2), hd(lista3), hd(listaNumeros))end)
             loop(tl(lista1), tl(lista2), tl(lista3), numProcesos - 1, tl(listaNumeros), listaResultados)
         end
     end

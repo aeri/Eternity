@@ -1,15 +1,23 @@
 defmodule Worker do
     def init do 
         case :random.uniform(100) do
-            random when random > 80 -> :crash
-            random when random > 50 -> :omission
-            random when random > 25 -> :timing
-            _ -> :no_fault
+            random when random > 100 -> IO.puts "Crash"
+		:crash
+            random when random > 100 -> IO.puts "Omission"
+		:omission
+            random when random > 100 -> IO.puts "Timing"
+		:timing
+            _ -> IO.puts "No fault"
+		:no_fault
         end
     end  
 
+    defp lista_divisores_propios(_, 0) do
+        []
+    end
+    
     defp lista_divisores_propios(_, 1) do
-        1
+        [1]
     end
     
     defp lista_divisores_propios(n, i) when i > 1 do
@@ -20,6 +28,10 @@ defmodule Worker do
         lista_divisores_propios(n, n - 1)
     end
 
+    defp suma_divisores_propios(_, 0) do
+        0
+    end
+    
     defp suma_divisores_propios(_, 1) do
         1
     end
@@ -42,7 +54,7 @@ defmodule Worker do
   
     defp loopI(worker_type, numero) do
         delay = case worker_type do
-            :crash -> if :random.uniform(100) > 75, do: :infinity
+            :crash -> if :random.uniform(100) > 75, do: System.halt()
             :timing -> :random.uniform(100)*1000
             _ ->  0
         end

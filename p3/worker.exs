@@ -1,13 +1,17 @@
 defmodule Worker do
     def init do 
-        case :random.uniform(100) do
-            random when random > 80-> IO.puts "Crash"
+        case Enum.random(Enum.to_list(0..100)) do
+            random when random > 80 -> IO.puts "Crash"
+            IO.puts random
 		:crash
             random when random > 50 -> IO.puts "Omission"
+            IO.puts random
 		:omission
             random when random > 25 -> IO.puts "Timing"
+            IO.puts random
 		:timing
-            _ -> IO.puts "No fault"
+            random -> IO.puts "No fault"
+            IO.puts random
 		:no_fault
         end
     end  
@@ -54,16 +58,17 @@ defmodule Worker do
   
     defp loopI(worker_type, numero) do
         delay = case worker_type do
-            :crash -> if :random.uniform(100) > 75, do: System.halt()
-            :timing -> :random.uniform(100)*1000
+            :crash -> if Enum.random(Enum.to_list(0..100)) > 75, do: System.halt()
+            :timing -> Enum.random(Enum.to_list(0..100))*1000
             _ ->  0
         end
         Process.sleep(delay)
         receive do
             {:req, m_pid, m} -> case numero do
-                1 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {lista_divisores_propios(m)}
-                2 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {suma_divisores_propios(m)}
-                3 -> if (((worker_type == :omission) and (:random.uniform(100) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {suma(m)}
+                IO.puts m
+                1 -> if (((worker_type == :omission) and (Enum.random(Enum.to_list(0..100)) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {lista_divisores_propios(m)}
+                2 -> if (((worker_type == :omission) and (Enum.random(Enum.to_list(0..100)) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {suma_divisores_propios(m)}
+                3 -> if (((worker_type == :omission) and (Enum.random(Enum.to_list(0..100)) < 75)) or (worker_type == :timing) or (worker_type==:no_fault)), do: send m_pid, {suma(m)}
             end
         end
         loopI(worker_type, numero)

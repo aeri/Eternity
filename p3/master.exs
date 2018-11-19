@@ -3,7 +3,7 @@ defmodule Master do
         numProcesos = (length(lista1) + length(lista2) + length(lista3))/3
         receive do
             {pid, listaNumeros} ->
-                result = loop(lista1, lista2, lista3, numProcesos, listaNumeros, [])
+                result = loop(lista1, lista2, lista3, numProcesos, listaNumeros, [], 0)
                 send pid, {result}
                 init(lista1, lista2, lista3)
         end
@@ -43,24 +43,45 @@ defmodule Master do
         end
     end
     
-    def loop(lista1, lista2, lista3, numProcesos, listaNumeros, listaResultados) do
+    def loop(lista1, lista2, lista3, numProcesos, listaNumeros, listaResultados, numActivos) do
         if(numProcesos == 0) do
             receive do
                 {:timeout, n, nodo1, nodo2, nodo3} ->
                     IO.puts "Recibido timeout"
-                    loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, [n] ++ listaNumeros, listaResultados)
+                    loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, [n] ++ listaNumeros, listaResultados, numActivos - 1)
                 {:success, result, n, nodo1, nodo2, nodo3} ->
                     IO.puts "Recibido resultado"
+                    IO.puts result
                     if (result == n) do
-                        loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, listaNumeros, listaResultados ++ [result])
+                        loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, listaNumeros, listaResultados ++ [result], numActivos - 1)
+                        IO.puts "Es perfecto!"
                     else
-                        loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, listaNumeros, listaResultados)
+                        loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, listaNumeros, listaResultados, numActivos - 1)
                     end
             end
         else
-            pid = self()
-            spawn(fn->funcion(pid, hd(lista1), hd(lista2), hd(lista3), hd(listaNumeros))end)
-            loop(tl(lista1), tl(lista2), tl(lista3), numProcesos - 1, tl(listaNumeros), listaResultados)
+            if listaNumeros == [] do
+                if numActivos >= 0 do
+                    receive do
+                        {:timeout, n, nodo1, nodo2, nodo3} ->
+                            IO.puts "Recibido timeout"
+                            loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, [n] ++ listaNumeros, listaResultados, numActivos - 1)
+                        {:success, result, n, nodo1, nodo2, nodo3} ->
+                            IO.puts "Recibido resultado"
+                            IO.puts result
+                            if (result == n) do
+                                loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, listaNumeros, listaResultados ++ [result], numActivos - 1)
+                                IO.puts "Es perfecto!"
+                            else
+                                loop(lista1 ++ [nodo1], lista2 ++ [nodo2], lista3 ++ [nodo3], numProcesos + 1, listaNumeros, listaResultados, numActivos - 1)
+                            end
+                    end
+                end
+            else
+                pid = self()
+                spawn(fn->funcion(pid, hd(lista1), hd(lista2), hd(lista3), hd(listaNumeros))end)
+                loop(tl(lista1), tl(lista2), tl(lista3), numProcesos - 1, tl(listaNumeros), listaResultados, numActivos + 1)
+            end
         end
     end
 end

@@ -1,11 +1,11 @@
 defmodule Worker do
     def init do 
         case :random.uniform(100) do
-            random when random > 100 -> IO.puts "Crash"
+            random when random > 80-> IO.puts "Crash"
 		:crash
-            random when random > 100 -> IO.puts "Omission"
+            random when random > 50 -> IO.puts "Omission"
 		:omission
-            random when random > 100 -> IO.puts "Timing"
+            random when random > 25 -> IO.puts "Timing"
 		:timing
             _ -> IO.puts "No fault"
 		:no_fault

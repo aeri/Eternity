@@ -4,10 +4,9 @@ defmodule Cliente do
         receive do
             {result} ->
                 IO.puts "Recibidos los resultados"
-                init(master_pid, inicio, fin)
+                for resultado <- result do
+                    IO.puts resultado
+                end
         end
     end
 end
-
-
-Cliente.init({:master, :"master@127.0.0.1"}, 1, 10000)

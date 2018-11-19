@@ -1,1 +1,6 @@
-Master.init([{:worker1, :"worker1@127.0.0.1"}], [{:worker2, :"worker2@127.0.0.1"}], [{:worker3, :"worker3@127.0.0.1"}])
+Master.init([{:worker1, :"worker1@10.10.10.1"},{:worker4, :"worker4@10.10.10.1"},{:worker7, :"worker7@10.10.10.1"}], [{:worker2, :"worker2@10.10.10.1"},{:worker5, :"worker5@10.10.10.1"},{:worker8, :"worker8@10.10.10.1"}], [{:worker3, :"worker1@10.10.10.1"},{:worker6, :"worker1@10.10.10.1"},{:worker9, :"worker1@10.10.10.1"}])
+
+
+
+
+Cliente.init({:master, :"master@10.10.10.8"}, 1, 100000)

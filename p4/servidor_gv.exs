@@ -69,9 +69,7 @@ defmodule ServidorGV do
         spawn(__MODULE__, :init_monitor, [self()]) # otro proceso concurrente
 
         #### VUESTRO CODIGO DE INICIALIZACION
-        tentativa = vista_inicial() # Se crea una vista con primario y copia con valor undefined
-        valida = vista_inicial() # Se crea una vista con primario y copia con valor undefined
-        bucle_recepcion(tentativa, valida)
+        bucle_recepcion(vista_inicial(), vista_inicial(), 0, 0, [])
     end
 
     def init_monitor(pid_principal) do
@@ -81,68 +79,143 @@ defmodule ServidorGV do
     end
 
 
-    defp bucle_recepcion(tentativa, valida) do
-        {tentativa, valida} = receive do
+    defp bucle_recepcion(tentativa, valida, primario, copia, nodosespera) do
+        {tentativa, valida, primario, copia, nodosespera} = receive do
                     {:latido, 0, nodo_emisor} ->
+                        IO.puts tentativa.num_vista
                         if tentativa.primario == :undefined do
-                            tentativa = %{num_vista: tentativa.num_vista + 1, primario: nodo_emisor, copia: tentativa.copia}
-                            send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                            {tentativa, valida}
+                            if tentativa.num_vista == 0 do
+                                tentativa = %{num_vista: tentativa.num_vista + 1, primario: nodo_emisor, copia: tentativa.copia}
+                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                            {tentativa, valida, primario, copia, nodosespera}
+                            else
+                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                {tentativa, valida, primario, copia, nodosespera}
+                            end
                         else 
+                            IO.puts nodo_emisor
+                            IO.puts tentativa.primario
                             if tentativa.copia == :undefined do
                                 tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: nodo_emisor}
                                 send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                                {tentativa, valida}
+                                {tentativa, valida, primario, copia, nodosespera}
                             else
                                 if tentativa.primario == nodo_emisor do
-                                    tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.copia, copia: :undefined}
-                                    send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                                    {tentativa, valida}
+                                    primario = 0
+                                    if tentativa.num_vista != valida.num_vista do
+                                        IO.puts "Error Grave: posible pérdida de datos" # No se ha confirmado la vista antes de que caiga el primario
+                                        System.halt()
+                                    else
+                                        nodosespera = nodosespera ++ [nodo_emisor]
+                                        if length(nodosespera) > 0 do
+                                            tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.copia, copia: hd(nodosespera)}
+                                            send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                            {tentativa, valida, primario, copia, tl(nodosespera)}
+                                        else
+                                            tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.copia, copia: :undefined}
+                                            send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                            {tentativa, valida, primario, copia, nodosespera}
+                                        end
+                                    end
                                 else
                                     if tentativa.copia == nodo_emisor do
+                                        copia = 0
                                         tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: :undefined}
                                         send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                                        {tentativa, valida}
+                                        {tentativa, valida, primario, copia, nodosespera}
                                     else
                                         send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                                        {tentativa, valida}
+                                        {tentativa, valida, primario, copia, nodosespera ++ [nodo_emisor]}
                                     end
                                 end
                             end
                         end
                     {:latido, -1, nodo_emisor} ->
-                        send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                        {tentativa, valida}
+                        if nodo_emisor == tentativa.primario do
+                            primario = 0 # Reiniciamos los latidos fallidos
+                            send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                            {tentativa, valida, primario, copia, nodosespera}
+                        else
+                            if nodo_emisor == tentativa.copia do
+                                copia = 0 # Reiniciamos los latidos fallidos
+                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                {tentativa, valida, primario, copia, nodosespera}
+                            else
+                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                {tentativa, valida, primario, copia, nodosespera}
+                            end
+                        end
                         
                     {:latido, n, nodo_emisor} ->
                         if nodo_emisor == tentativa.primario do
-                            valida = tentativa
-                            send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                            {tentativa, valida}
+                            primario = 0
+                            if n == tentativa.num_vista do
+                                valida = tentativa
+                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                {tentativa, valida, primario, copia, nodosespera}
+                            else
+                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                {tentativa, valida, primario, copia, nodosespera}
+                            end
                         else
                             if tentativa.copia == :undefined do
                                 tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: nodo_emisor}
                                 send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                                {tentativa, valida}
+                                {tentativa, valida, primario, copia, nodosespera}
                             else
-                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                                {tentativa, valida}
+                                if nodo_emisor == tentativa.copia do
+                                    copia = 0
+                                    send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                    {tentativa, valida, primario, copia, nodosespera}
+                                else
+                                    send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                    {tentativa, valida, primario, copia, nodosespera}
+                                end
                             end
                         end
                         
                     {:obten_vista, pid} ->
                         send pid, {:vista_vista_v, valida, tentativa==valida}
-                        {tentativa, valida}
+                        {tentativa, valida, primario, copia, nodosespera}
 
-                        ### VUESTRO CODIGO                
-                        {tentativa, valida}
                     :procesa_situacion_servidores ->
-                
-                        ### VUESTRO CODIGO
-                        {tentativa, valida}
+                        if tentativa.primario != :undefined do
+                            primario = primario + 1
+                            copia = copia + 1
+                            if primario >= latidos_fallidos() do
+                                if tentativa.num_vista != valida.num_vista do
+                                    IO.puts "Error Grave: posible pérdida de datos" # No se ha confirmado la vista antes de que caiga el primario
+                                    System.halt()
+                                else
+                                    primario = 0
+                                    if length(nodosespera) > 0 do
+                                        tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.copia, copia: hd(nodosespera)}
+                                        {tentativa, valida, primario, copia, tl(nodosespera)}
+                                    else
+                                        tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.copia, copia: :undefined}
+                                        {tentativa, valida, primario, copia, nodosespera}
+                                    end
+                                end
+                            else
+                                if copia >= latidos_fallidos() do
+                                    copia = 0
+                                    if length(nodosespera) > 0 do
+                                        tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: hd(nodosespera)}
+                                        {tentativa, valida, primario, copia, tl(nodosespera)}
+                                    else
+                                        tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: :undefined}
+                                        {tentativa, valida, primario, copia, nodosespera}
+                                    end
+                                else
+                                    {tentativa, valida, primario, copia, nodosespera}
+                                end
+                            end
+                        else
+                            {tentativa, valida, primario, copia, nodosespera}
+                        end
         end
 
-        bucle_recepcion(tentativa, valida)
+        bucle_recepcion(tentativa, valida, primario, copia, nodosespera)
     end
     
     # OTRAS FUNCIONES PRIVADAS VUESTRAS

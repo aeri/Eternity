@@ -92,7 +92,7 @@ defmodule  GestorVistasTest do
     end
 
     ## Test 5 : Servidor rearrancado (C1) se convierte en copia.
-    @tag :deshabilitado
+    # @tag :deshabilitado
     test "Servidor rearrancado se conviert en copia", %{c1: c1, c2: c2} do
         IO.puts("Test: Servidor rearrancado se conviert en copia ...")
 
@@ -109,7 +109,7 @@ defmodule  GestorVistasTest do
     end
 
     ## Test 6 : Servidor en espera (C3) se convierte en copia si primario falla.
-    @tag :deshabilitado
+    # @tag :deshabilitado
     test "Servidor en espera se convierte en copia", %{c1: c1, c3: c3} do
         IO.puts("Test: Servidor en espera se convierte en copia ...")
 
@@ -120,16 +120,31 @@ defmodule  GestorVistasTest do
         # vista_vmos nueva vista por estar DE NUEVO completa
         # vista vista_v debería ser 5
         ClienteGV.latido(c1, vista.num_vista + 1)
-        
         comprobar_vista_v(c1, c1, c3, vista.num_vista + 1)        
-        
         IO.puts(" ... Superado")
     end
  
     ## Test 7 : Primario rearrancado (C2) tratado como caido y 
     #           es convertido en nodo en espera.
     #       rearrancado_caido(C1, C3),
-
+    # @tag :desabilitado
+    test "Primario rearrancado (C2) tratado como caido y es convertido en nodo en espera.", %{c1: c1, c2: c2, c3: c3} do
+        IO.puts("Primario rearrancado (C2) tratado como caido ...")
+        
+        {vista, _} = ClienteGV.latido(c2, 0) # Primario rearrancado
+        IO.puts vista.primario
+        IO.puts vista.copia
+        {vista, _} = ClienteGV.latido(c1, 5)   # vista tentativa
+        IO.puts vista.primario
+        IO.puts vista.copia
+        IO.inspect rearrancado_caido(c1, c3, 5, ServidorGV.latidos_fallidos() * 2)
+        
+        ClienteGV.latido(c1, vista.num_vista)
+        
+        comprobar_vista_v(c1, c1, c3, vista.num_vista)
+        IO.puts(" ... Superado")
+    end
+        
     ## Test 8 : Servidor de vistas espera a que primario confirme vista
     ##          pero este no lo hace.
     ##          Poner C3 como Primario, C1 como Copia, C2 para comprobar
@@ -237,6 +252,16 @@ defmodule  GestorVistasTest do
         if (vista.primario != c1) or (vista.copia != c3) do
             Process.sleep(ServidorGV.intervalo_latidos())
             espera_pasa_a_copia(c1, c3, num_vista_vista_v, x - 1)
+        end
+    end
+    
+    defp rearrancado_caido(_c1, _c3, _num_vista_vista_v, 0), do: :fin 
+    defp rearrancado_caido(c1, c3, num_vista_vista_v, x) do
+        ClienteGV.latido(c3, num_vista_vista_v)
+        {vista, _} = ClienteGV.latido(c1, num_vista_vista_v)
+        if (vista.primario != c1) or (vista.copia != c3) do
+            Process.sleep(ServidorGV.intervalo_latidos())
+            rearrancado_caido(c1, c3, num_vista_vista_v, x - 1)
         end
     end
 

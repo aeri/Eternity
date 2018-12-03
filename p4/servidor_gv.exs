@@ -139,33 +139,18 @@ defmodule ServidorGV do
                 else
                   nodosespera = nodosespera ++ [nodo_emisor]
 
-                  if length(nodosespera) > 0 do
-                    tentativa = %{
-                      num_vista: tentativa.num_vista + 1,
-                      primario: tentativa.copia,
-                      copia: hd(nodosespera)
-                    }
+                  tentativa = %{
+                    num_vista: tentativa.num_vista + 1,
+                    primario: tentativa.copia,
+                    copia: hd(nodosespera)
+                  }
 
-                    send(
-                      {:cliente_gv, nodo_emisor},
-                      {:vista_tentativa, tentativa, tentativa == valida}
-                    )
+                  send(
+                    {:cliente_gv, nodo_emisor},
+                    {:vista_tentativa, tentativa, tentativa == valida}
+                  )
 
-                    {tentativa, valida, primario, copia, tl(nodosespera)}
-                  else
-                    tentativa = %{
-                      num_vista: tentativa.num_vista + 1,
-                      primario: tentativa.copia,
-                      copia: :undefined
-                    }
-
-                    send(
-                      {:cliente_gv, nodo_emisor},
-                      {:vista_tentativa, tentativa, tentativa == valida}
-                    )
-
-                    {tentativa, valida, primario, copia, nodosespera}
-                  end
+                  {tentativa, valida, primario, copia, tl(nodosespera)}
                 end
               else
                 if tentativa.copia == nodo_emisor do
@@ -275,12 +260,25 @@ defmodule ServidorGV do
 
                 {tentativa, valida, primario, copia, nodosespera}
               else
-                send(
-                  {:cliente_gv, nodo_emisor},
-                  {:vista_tentativa, tentativa, tentativa == valida}
-                )
+                if Enum.member?(nodosespera, nodo_emisor) do
+                  send(
+                    {:cliente_gv, nodo_emisor},
+                    {:vista_tentativa, tentativa, tentativa == valida}
+                  )
 
-                {tentativa, valida, primario, copia, nodosespera}
+                  {tentativa, valida, primario, copia, nodosespera}
+                else
+                  # Si el nodo no se encontraba ni como primario, ni copia,
+                  # ni espera se añade como nodo en espera
+                  nodosespera = nodosespera ++ [nodo_emisor]
+
+                  send(
+                    {:cliente_gv, nodo_emisor},
+                    {:vista_tentativa, tentativa, tentativa == valida}
+                  )
+
+                  {tentativa, valida, primario, copia, nodosespera}
+                end
               end
             end
           end

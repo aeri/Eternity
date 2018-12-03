@@ -82,19 +82,18 @@ defmodule ServidorGV do
     defp bucle_recepcion(tentativa, valida, primario, copia, nodosespera) do
         {tentativa, valida, primario, copia, nodosespera} = receive do
                     {:latido, 0, nodo_emisor} ->
-                        IO.puts tentativa.num_vista
                         if tentativa.primario == :undefined do
                             if tentativa.num_vista == 0 do
                                 tentativa = %{num_vista: tentativa.num_vista + 1, primario: nodo_emisor, copia: tentativa.copia}
                                 send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                            {tentativa, valida, primario, copia, nodosespera}
-                            else
-                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
                                 {tentativa, valida, primario, copia, nodosespera}
+                            else
+                                nodosespera = nodosespera ++ [nodo_emisor]
+                                tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: hd(nodosespera)}
+                                send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
+                                {tentativa, valida, primario, copia, tl(nodosespera)}
                             end
-                        else 
-                            IO.puts nodo_emisor
-                            IO.puts tentativa.primario
+                        else
                             if tentativa.copia == :undefined do
                                 tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: nodo_emisor}
                                 send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
@@ -104,7 +103,8 @@ defmodule ServidorGV do
                                     primario = 0
                                     if tentativa.num_vista != valida.num_vista do
                                         IO.puts "Error Grave: posible pérdida de datos" # No se ha confirmado la vista antes de que caiga el primario
-                                        System.halt()
+                                        #System.halt()
+                                        {vista_inicial(), vista_inicial(), 0, 0, []}
                                     else
                                         nodosespera = nodosespera ++ [nodo_emisor]
                                         if length(nodosespera) > 0 do
@@ -119,10 +119,11 @@ defmodule ServidorGV do
                                     end
                                 else
                                     if tentativa.copia == nodo_emisor do
+                                        nodosespera = nodosespera ++ [nodo_emisor]
                                         copia = 0
-                                        tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: :undefined}
+                                        tentativa = %{num_vista: tentativa.num_vista + 1, primario: tentativa.primario, copia: hd(nodosespera)}
                                         send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
-                                        {tentativa, valida, primario, copia, nodosespera}
+                                        {tentativa, valida, primario, copia, tl(nodosespera)}
                                     else
                                         send {:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa==valida}
                                         {tentativa, valida, primario, copia, nodosespera ++ [nodo_emisor]}
@@ -185,7 +186,8 @@ defmodule ServidorGV do
                             if primario >= latidos_fallidos() do
                                 if tentativa.num_vista != valida.num_vista do
                                     IO.puts "Error Grave: posible pérdida de datos" # No se ha confirmado la vista antes de que caiga el primario
-                                    System.halt()
+                                    #System.halt()
+                                    {vista_inicial(), vista_inicial(), 0, 0, []}
                                 else
                                     primario = 0
                                     if length(nodosespera) > 0 do

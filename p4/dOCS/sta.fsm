@@ -1,0 +1,70 @@
+<?xml version='1.0'?>
+<!DOCTYPE qfsmproject SYSTEM 'qfsm.dtd'>
+<qfsmproject version="0.54" author="Qfsm">
+  <machine nummooreout="0" transfontitalic="0" draw_it="1" statefontsize="8" transfont="Helvetica" statefontitalic="0" author="Pablo Orduna &amp; Daniel Naval" description="" version="A" name="Práctica 4 - Autómata de gestor de vistas" arrowtype="1" numbits="3" statefontweight="50" statefont="Helvetica" numin="0" transfontsize="8" transfontweight="75" type="2" numout="0" initialstate="0">
+    <outputnames_moore></outputnames_moore>
+    <inputnames></inputnames>
+    <outputnames></outputnames>
+    <itransition ypos="345" endx="84.16666666666669" xpos="54.16666666666669" endy="345"/>
+    <state pencolor="16711807" exit_actions="" radius="70" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="345" code="0" xpos="154.1666666666667" linewidth="1">Initial</state>
+    <state pencolor="0" exit_actions="" radius="70" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="157.5" code="1" xpos="323.3333333333333" linewidth="1">obtener_vista_valida</state>
+    <state pencolor="0" exit_actions="" radius="70" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="513.3333333333334" code="2" xpos="297.5" linewidth="1">gestion_caidas</state>
+    <state pencolor="0" exit_actions="" radius="70" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="329.1666666666667" code="3" xpos="475.8333333333334" linewidth="1">comprobar_latido</state>
+    <state pencolor="0" exit_actions="" radius="70" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="195" code="4" xpos="767" linewidth="1">inicio/caida</state>
+    <state pencolor="0" exit_actions="" radius="70" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="438" code="5" xpos="767" linewidth="1">vista_normal</state>
+    <transition c1x="225.1547265406648" c2y="235.345625094878" c1y="264.1862514249319" description="" straight="1" type="2" ypos="293.0268777549857" endx="273.3482345932129" xpos="201.0579725143907" endy="206.5049987648241" c2x="249.2514805669389">
+      <from>0</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">:obten_vista</inputs>
+      <outputs></outputs>
+    </transition>
+    <transition c1x="224.2736237898809" c2y="431.0952644625295" c1y="414.6959685701444" description="" straight="1" type="2" ypos="398.2966726777592" endx="273.724887535571" xpos="199.5479919170359" endy="447.4945603549147" c2x="248.9992556627259">
+      <from>0</from>
+      <to>2</to>
+      <inputs default="0" any="0" invert="0">:procesa_situacion_servidores</inputs>
+      <outputs></outputs>
+    </transition>
+    <transition c1x="284.8232099734124" c2y="338.7089361255194" c1y="340.1337534200198" description="" straight="1" type="2" ypos="341.5585707145201" endx="406.3055908821402" xpos="224.0820195190484" endy="337.2841188310191" c2x="345.5644004277763">
+      <from>0</from>
+      <to>3</to>
+      <inputs default="0" any="0" invert="0">:latido</inputs>
+      <outputs></outputs>
+    </transition>
+    <transition c1x="167.193114713287" c2y="194.9543315973613" c1y="122.831043033887" description="" straight="0" type="2" ypos="149.8744211370793" endx="131.579491721497" xpos="253.7499262091821" endy="278.7442868275022" c2x="105.636303217392">
+      <from>1</from>
+      <to>0</to>
+      <inputs default="1" any="0" invert="0"></inputs>
+      <outputs></outputs>
+    </transition>
+    <transition c1x="151.2668877575578" c2y="458.4773046017548" c1y="516.2251591725706" description="" straight="0" type="2" ypos="522.3198402050265" endx="100.7296266908287" xpos="228.0792344161704" endy="390.2159569026322" c2x="93.54197334944135">
+      <from>2</from>
+      <to>0</to>
+      <inputs default="0" any="0" invert="0"></inputs>
+      <outputs></outputs>
+    </transition>
+    <transition c1x="593.176220280345" c2y="244.9511064928453" c1y="272.4114688532074" description="" straight="1" type="2" ypos="299.8718312135695" endx="700.7114909779442" xpos="539.4085849315454" endy="217.4907441324832" c2x="646.9438556291447">
+      <from>3</from>
+      <to>4</to>
+      <inputs default="0" any="0" invert="0">num==0</inputs>
+      <outputs></outputs>
+    </transition>
+    <transition c1x="593.7588300594488" c2y="400.3739248360275" c1y="377.0246474598949" description="" straight="1" type="2" ypos="353.6753700837625" endx="698.4713706183677" xpos="541.4025597799894" endy="423.72320221216" c2x="646.1151003389083">
+      <from>3</from>
+      <to>5</to>
+      <inputs default="0" any="0" invert="0">num!=0</inputs>
+      <outputs></outputs>
+    </transition>
+    <transition c1x="537.6476375068654" c2y="236.6261005290514" c1y="181.2109877227679" description="" straight="0" type="2" ypos="186.5768042736534" endx="219.4028143909336" xpos="697.5086352576404" endy="319.6180176089883" c2x="357.2709083200793">
+      <from>4</from>
+      <to>0</to>
+      <inputs default="1" any="0" invert="0"></inputs>
+      <outputs></outputs>
+    </transition>
+    <transition c1x="534.6945928965035" c2y="418.4268599509413" c1y="479.8404767699947" description="" straight="0" type="2" ypos="468.8783195050477" endx="219.9632717064815" xpos="704.1785913517996" endy="368.8915626369357" c2x="330.2396366255927">
+      <from>5</from>
+      <to>0</to>
+      <inputs default="1" any="0" invert="0"></inputs>
+      <outputs></outputs>
+    </transition>
+  </machine>
+</qfsmproject>

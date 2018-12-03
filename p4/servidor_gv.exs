@@ -98,35 +98,35 @@ defmodule ServidorGV do
 
               {tentativa, valida, primario, copia, nodosespera}
             else
-                if tentativa.copia == :undefined do
-              nodosespera = nodosespera ++ [nodo_emisor]
+              if tentativa.copia == :undefined do
+                nodosespera = nodosespera ++ [nodo_emisor]
 
-              tentativa = %{
-                num_vista: tentativa.num_vista + 1,
-                primario: tentativa.primario,
-                copia: hd(nodosespera)
-              }
+                tentativa = %{
+                  num_vista: tentativa.num_vista + 1,
+                  primario: tentativa.primario,
+                  copia: hd(nodosespera)
+                }
 
-              send(
-                {:cliente_gv, nodo_emisor},
-                {:vista_tentativa, tentativa, tentativa == valida}
-              )
+                send(
+                  {:cliente_gv, nodo_emisor},
+                  {:vista_tentativa, tentativa, tentativa == valida}
+                )
 
-              {tentativa, valida, primario, copia, tl(nodosespera)}
+                {tentativa, valida, primario, copia, tl(nodosespera)}
               else
                 tentativa = %{
-                    num_vista: tentativa.num_vista + 1,
-                    primario: tentativa.copia,
-                    copia: nodo_emisor
+                  num_vista: tentativa.num_vista + 1,
+                  primario: tentativa.copia,
+                  copia: nodo_emisor
                 }
-                send(
-                {:cliente_gv, nodo_emisor},
-                {:vista_tentativa, tentativa, tentativa == valida}
-              )
 
-              {tentativa, valida, primario, copia, nodosespera}
+                send(
+                  {:cliente_gv, nodo_emisor},
+                  {:vista_tentativa, tentativa, tentativa == valida}
+                )
+
+                {tentativa, valida, primario, copia, nodosespera}
               end
-                
             end
           else
             if tentativa.copia == :undefined do

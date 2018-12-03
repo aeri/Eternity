@@ -91,7 +91,11 @@ defmodule ServidorGV do
                 copia: tentativa.copia
               }
 
-              send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+              send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
               {tentativa, valida, primario, copia, nodosespera}
             else
               nodosespera = nodosespera ++ [nodo_emisor]
@@ -102,7 +106,11 @@ defmodule ServidorGV do
                 copia: hd(nodosespera)
               }
 
-              send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+              send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
               {tentativa, valida, primario, copia, tl(nodosespera)}
             end
           else
@@ -113,7 +121,11 @@ defmodule ServidorGV do
                 copia: nodo_emisor
               }
 
-              send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+              send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
               {tentativa, valida, primario, copia, nodosespera}
             else
               if tentativa.primario == nodo_emisor do
@@ -178,7 +190,8 @@ defmodule ServidorGV do
                     {:vista_tentativa, tentativa, tentativa == valida}
                   )
 
-                  {tentativa, valida, primario, copia, nodosespera ++ [nodo_emisor]}
+                  {tentativa, valida, primario, copia,
+                   nodosespera ++ [nodo_emisor]}
                 end
               end
             end
@@ -188,16 +201,30 @@ defmodule ServidorGV do
           if nodo_emisor == tentativa.primario do
             # Reiniciamos los latidos fallidos
             primario = 0
-            send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+
+            send(
+              {:cliente_gv, nodo_emisor},
+              {:vista_tentativa, tentativa, tentativa == valida}
+            )
+
             {tentativa, valida, primario, copia, nodosespera}
           else
             if nodo_emisor == tentativa.copia do
               # Reiniciamos los latidos fallidos
               copia = 0
-              send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+
+              send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
               {tentativa, valida, primario, copia, nodosespera}
             else
-              send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+              send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
               {tentativa, valida, primario, copia, nodosespera}
             end
           end
@@ -208,10 +235,19 @@ defmodule ServidorGV do
 
             if n == tentativa.num_vista do
               valida = tentativa
-              send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+
+              send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
               {tentativa, valida, primario, copia, nodosespera}
             else
-              send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+              send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
               {tentativa, valida, primario, copia, nodosespera}
             end
           else
@@ -222,7 +258,11 @@ defmodule ServidorGV do
                 copia: nodo_emisor
               }
 
-              send({:cliente_gv, nodo_emisor}, {:vista_tentativa, tentativa, tentativa == valida})
+              send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
               {tentativa, valida, primario, copia, nodosespera}
             else
               if nodo_emisor == tentativa.copia do

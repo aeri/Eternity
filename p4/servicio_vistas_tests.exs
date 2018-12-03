@@ -80,7 +80,12 @@ defmodule GestorVistasTest do
 
     {vista, _} = ClienteGV.latido(c2, 2)
 
-    copia_releva_primario(c2, vista.num_vista, ServidorGV.latidos_fallidos() * 2)
+    copia_releva_primario(
+      c2,
+      vista.num_vista,
+      ServidorGV.latidos_fallidos() * 2
+    )
+
     comprobar_tentativa(c2, c2, :undefined, vista.num_vista + 1)
 
     IO.puts(" ... Superado")
@@ -113,7 +118,10 @@ defmodule GestorVistasTest do
     ClienteGV.latido(c3, 0)
     # vista tentativa
     {vista, _} = ClienteGV.latido(c1, 4)
-    IO.inspect(espera_pasa_a_copia(c1, c3, 4, ServidorGV.latidos_fallidos() * 2))
+
+    IO.inspect(
+      espera_pasa_a_copia(c1, c3, 4, ServidorGV.latidos_fallidos() * 2)
+    )
 
     # vista_vmos nueva vista por estar DE NUEVO completa
     # vista vista_v debería ser 5
@@ -126,11 +134,12 @@ defmodule GestorVistasTest do
   #           es convertido en nodo en espera.
   #       rearrancado_caido(C1, C3),
   # @tag :deshabilitado
-  test "Primario rearrancado (C2) tratado como caido y es convertido en nodo en espera.", %{
-    c1: c1,
-    c2: c2,
-    c3: c3
-  } do
+  test "Primario rearrancado (C2) tratado como caido y es convertido en nodo en espera.",
+       %{
+         c1: c1,
+         c2: c2,
+         c3: c3
+       } do
     IO.puts("Primario rearrancado (C2) tratado como caido ...")
 
     # Primario rearrancado
@@ -152,7 +161,11 @@ defmodule GestorVistasTest do
   ##          - Cae, pero C1 no es promocionado porque C3 no confimo !
   # primario_no_confirma_vista(C1, C2, C3),
   # @tag :deshabilitado
-  test "Servidor de vistas espera a que primario confirme vista", %{c1: c1, c2: c2, c3: c3} do
+  test "Servidor de vistas espera a que primario confirme vista", %{
+    c1: c1,
+    c2: c2,
+    c3: c3
+  } do
     IO.puts("Servidor de vistas espera a que primario confirme vista")
 
     # Se reinicia C3 para que pase a ser el primario posteriormente
@@ -163,9 +176,19 @@ defmodule GestorVistasTest do
     ClienteGV.latido(c2, 7)
     # C2 pasará a ser un nodo en espera
     ClienteGV.latido(c2, 0)
-    IO.inspect(primario_no_confirma_vista(c1, c2, c3, 8, ServidorGV.latidos_fallidos() * 2))
+
+    IO.inspect(
+      primario_no_confirma_vista(
+        c1,
+        c2,
+        c3,
+        8,
+        ServidorGV.latidos_fallidos() * 2
+      )
+    )
 
     ClienteGV.latido(c3, 0)
+
     # Se comprueba con una vista inicial porque el servidor de vistas debería estar caido
     comprobar_vista_v(c2, :undefined, :undefined, 0)
     IO.puts(" ... Superado")
@@ -181,8 +204,12 @@ defmodule GestorVistasTest do
     ClienteGV.latido(c2, 0)
     ClienteGV.latido(c2, 1)
     # Caen los nodos activos
-    IO.inspect(sin_inicializar_no(c1, c2, c3, 2, ServidorGV.latidos_fallidos() * 2))
+    IO.inspect(
+      sin_inicializar_no(c1, c2, c3, 2, ServidorGV.latidos_fallidos() * 2)
+    )
+
     ClienteGV.latido(c1, 0)
+
     # El nodo primario debería ser undefined porque c1 no entra directamente como primario
     comprobar_tentativa(c1, :undefined, c1, 3)
     IO.puts(" ... Superado")
@@ -306,7 +333,8 @@ defmodule GestorVistasTest do
     end
   end
 
-  defp primario_no_confirma_vista(_c1, _c2, _c3, _num_vista_vista_v, 0), do: :fin
+  defp primario_no_confirma_vista(_c1, _c2, _c3, _num_vista_vista_v, 0),
+    do: :fin
 
   defp primario_no_confirma_vista(c1, c2, c3, num_vista_vista_v, x) do
     ClienteGV.latido(c2, num_vista_vista_v)

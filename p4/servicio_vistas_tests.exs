@@ -209,7 +209,6 @@ defmodule GestorVistasTest do
     )
 
     ClienteGV.latido(c1, 0)
-
     # El nodo primario debería ser undefined porque c1 no entra directamente como primario
     comprobar_tentativa(c1, :undefined, c1, 3)
     IO.puts(" ... Superado")

@@ -98,6 +98,7 @@ defmodule ServidorGV do
 
               {tentativa, valida, primario, copia, nodosespera}
             else
+                if tentativa.copia == :undefined do
               nodosespera = nodosespera ++ [nodo_emisor]
 
               tentativa = %{
@@ -112,6 +113,20 @@ defmodule ServidorGV do
               )
 
               {tentativa, valida, primario, copia, tl(nodosespera)}
+              else
+                tentativa = %{
+                    num_vista: tentativa.num_vista + 1,
+                    primario: tentativa.copia,
+                    copia: nodo_emisor
+                }
+                send(
+                {:cliente_gv, nodo_emisor},
+                {:vista_tentativa, tentativa, tentativa == valida}
+              )
+
+              {tentativa, valida, primario, copia, nodosespera}
+              end
+                
             end
           else
             if tentativa.copia == :undefined do

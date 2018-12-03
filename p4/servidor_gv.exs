@@ -197,38 +197,6 @@ defmodule ServidorGV do
             end
           end
 
-        {:latido, -1, nodo_emisor} ->
-          if nodo_emisor == tentativa.primario do
-            # Reiniciamos los latidos fallidos
-            primario = 0
-
-            send(
-              {:cliente_gv, nodo_emisor},
-              {:vista_tentativa, tentativa, tentativa == valida}
-            )
-
-            {tentativa, valida, primario, copia, nodosespera}
-          else
-            if nodo_emisor == tentativa.copia do
-              # Reiniciamos los latidos fallidos
-              copia = 0
-
-              send(
-                {:cliente_gv, nodo_emisor},
-                {:vista_tentativa, tentativa, tentativa == valida}
-              )
-
-              {tentativa, valida, primario, copia, nodosespera}
-            else
-              send(
-                {:cliente_gv, nodo_emisor},
-                {:vista_tentativa, tentativa, tentativa == valida}
-              )
-
-              {tentativa, valida, primario, copia, nodosespera}
-            end
-          end
-
         {:latido, n, nodo_emisor} ->
           if nodo_emisor == tentativa.primario do
             primario = 0

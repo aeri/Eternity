@@ -47,7 +47,7 @@ defmodule ServidorSA do
  
     	spawn(__MODULE__, :enviar_latido, [self()])
 
-	{:vista_tentativa, vista, is_ok} = ClienteGV.latido(nodo_servidor_gv, 0)
+	{:vista_tentativa, vista, _} = ClienteGV.latido(nodo_servidor_gv, 0)
          # Poner estado inicial
         bucle_recepcion_principal(%{}, vista, nodo_servidor_gv) 
     end
@@ -63,15 +63,44 @@ defmodule ServidorSA do
 
                     # Solicitudes de lectura y escritura
                     # de clientes del servicio alm.
-                {op, param, nodo_origen}  ->
-			{bbdd, vista, nodo_servidor_gv}
+                {op, param, nodo_origen} ->
+			if Node.self() == vista.primario do
+				case op do
+					:lee ->
+						valor = bbdd[param]
+                    				send {:cliente_sa, nodo_origen}, {:resultado, valor}
+						{bbdd, vista, nodo_servidor_gv}
+					:escribe_generico ->
+						{clave, valor, _} = param
+						newbbdd = Map.put(bbdd, clave, valor)
+						IO.puts "Datos escritos en el primario"
+						IO.inspect newbbdd
+						# Se copian los cambios al nodo copia
+						send {:servidor_sa, vista.copia}, {:copy_paste, newbbdd}
+                    				send {:cliente_sa, nodo_origen}, {:resultado, valor}
+						{newbbdd, vista, nodo_servidor_gv}
+				end
+			else
+				IO.puts "Soy un nodo copia"
+                    		send nodo_origen, {:resultado, :no_soy_primario_valido}
+				{bbdd, vista, nodo_servidor_gv}
+			end
+
+		{:copy_paste, database} ->
+			IO.puts "Datos recibidos de la base"
+			IO.inspect database
+			{database, vista, nodo_servidor_gv} 
 
 		:enviar_latido ->
-			{:vista_tentativa, newvista, is_ok} = ClienteGV.latido(nodo_servidor_gv, vista.num_vista)
+			{:vista_tentativa, newvista, _} = ClienteGV.latido(nodo_servidor_gv, vista.num_vista)
+			if vista.num_vista != newvista.num_vista and newvista.primario != :undefined and newvista.copia != :undefined and newvista.primario == Node.self() do
+			#if vista.copia == Node.self() and newvista.primario == Node.self() do
+				IO.puts "Copiando de primario a copia la base de datos"
+				IO.puts newvista.copia
+				send {:servidor_sa, newvista.copia}, {:copy_paste, bbdd}
+			end
 			{bbdd, newvista, nodo_servidor_gv}
                	end
         bucle_recepcion_principal(bbdd, vista, nodo_servidor_gv)
     end
-    
-    #--------- Otras funciones privadas que necesiteis .......
 end

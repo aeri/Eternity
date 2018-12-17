@@ -96,7 +96,26 @@ defmodule ClienteSA do
     def escribe_hash(nodo_cliente, clave, nuevo_valor) do
         escribe_generico(nodo_cliente, clave, nuevo_valor, true)
     end
-    
+ 
+    @spec lee_manual(String.t, node()) :: String.t
+    def lee_manual(parametro, nodo) do
+			send({:servidor_sa, nodo}, {:lee, parametro, self()})
+	    
+			# recuperar resultado
+			receive do
+			    {:resultado, :no_soy_primario_valido} ->
+			    	IO.puts "Recibido mensaje"
+				nil
+			    {:resultado, valor} -> 
+				valor
+
+			# Sin resultado en tiempo establecido ?
+			# -> se vuelve a pedir operacion al primario en curso
+			after ServidorGV.intervalo_latidos() ->
+			    lee_manual(parametro, nodo)
+			end
+    end
+   
 
     #------------------- Funciones privadas ---------------------------------
 
@@ -131,7 +150,7 @@ defmodule ClienteSA do
                 realizar_operacion(op, param, servidor_gv)
 
             nodo_primario ->   # enviar operación a ejecutar a primario
-                send({:servidor_sa, nodo_primario}, {op, param, Node.self()})
+                send({:servidor_sa, nodo_primario}, {op, param, self()})
     
                 # recuperar resultado
                 receive do
@@ -148,6 +167,4 @@ defmodule ClienteSA do
                 end
         end
     end
-
- 
 end

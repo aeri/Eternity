@@ -270,10 +270,88 @@ defmodule  ServicioAlmacenamientoTest do
     # Test 6 : Petición de escritura duplicada por perdida de respuesta
     #         (modificación realizada en BD), con primario y copia.
     
+    #@tag :deshabilitado
+     test "Test 6 : Comprobación de escritura ducplicada" do
+        IO.puts("Test: Comprobación de escritura duplicada")
+
+        # Para que funcione bien la función  ClienteGV.obten_vista
+        Process.register(self(), :servidor_sa)
+
+        # Arrancar nodos : 1 GV, 4 servidores y 3 cliente de almacenamiento
+        mapa_nodos = startServidores(["ca1", "ca2", "ca3"],
+                                     ["sa1", "sa2", "sa3", "sa4"],
+                                     @maquinas)
+        
+        # Espera configuracion y relacion entre nodos
+        Process.sleep(200)
+
+        # Comprobar primeros nodos primario y copia
+        {%{primario: p, copia: c}, _ok} = ClienteGV.obten_vista(mapa_nodos.gv)       
+        assert p == mapa_nodos.sa1
+        assert c == mapa_nodos.sa2
+
+        ClienteSA.escribe(mapa_nodos.ca1, "a", "aa")
+        ClienteSA.escribe(mapa_nodos.ca1, "a", "aa")
+        valorPrimario = ClienteSA.lee(mapa_nodos.ca3, "a")
+
+	# Se comprueba que el valor guardado es el primario
+	assert "aa" == valorPrimario
+
+        # Parar todos los nodos y epmds
+        stopServidores(mapa_nodos, @maquinas)
+
+        IO.puts(" ... Superado")
+    end
+
     
     # Test 7 : Comprobación de que un antiguo primario no debería servir
     #         operaciones de lectura.
-    
+
+    #@tag :deshabilitado
+     test "Test 7 : Comprobación de que un antiguo primario no debería servir para lectura" do
+        IO.puts("Test: Comprobación de que un antiguo primario no debería servir para lectura")
+
+        # Para que funcione bien la función  ClienteGV.obten_vista
+        Process.register(self(), :servidor_sa)
+
+        # Arrancar nodos : 1 GV, 4 servidores y 3 cliente de almacenamiento
+        mapa_nodos = startServidores(["ca1", "ca2", "ca3"],
+                                     ["sa1", "sa2", "sa3", "sa4"],
+                                     @maquinas)
+        
+        # Espera configuracion y relacion entre nodos
+        Process.sleep(200)
+
+        # Comprobar primeros nodos primario y copia
+        {%{primario: p, copia: c}, _ok} = ClienteGV.obten_vista(mapa_nodos.gv)       
+        assert p == mapa_nodos.sa1
+        assert c == mapa_nodos.sa2
+
+        ClienteSA.escribe(mapa_nodos.ca1, "a", "aa")
+        valorPrimario = ClienteSA.lee(mapa_nodos.ca3, "a")
+
+	# Se comprueba que el valor guardado es el primario
+	assert "aa" == valorPrimario
+
+        NodoRemoto.stop(p)
+
+	Process.sleep(700)
+
+	startServidoresSinGV([], ["sa1"], @maquinas, mapa_nodos.gv)
+
+	Process.sleep(700)
+
+	# Se hace una operación de lectura sobre el antiguo nodo primario
+	valor = ClienteSA.lee_manual("a", p)
+
+	assert valor == nil
+
+        # Parar todos los nodos y epmds
+        stopServidores(mapa_nodos, @maquinas)
+
+        IO.puts(" ... Superado")
+    end
+
     
     # Test 8 : Escrituras concurrentes de varios clientes sobre la misma clave,
     #         con comunicación con fallos (sobre todo pérdida de repuestas para
@@ -317,6 +395,34 @@ defmodule  ServicioAlmacenamientoTest do
         
         %{gv: sv} |> Map.merge(clientesAlm) |> Map.merge(servAlm)   
     end
+
+    defp startServidoresSinGV(clientes, serv_alm, maquinas, sv) do
+        tiempo_antes = :os.system_time(:milli_seconds)
+        
+        # Mapa con nodos cliente de almacenamiento
+        clientesAlm = for c <- clientes, into: %{} do
+                            {String.to_atom(c),
+                            ClienteSA.startNodo(c, "127.0.0.1")}
+                        end
+        for { _, n} <- clientesAlm, do: ClienteSA.startService(n, sv)
+        
+        # Mapa con nodos servidores almacenamiento                 
+        servAlm = for {s, m} <-  Enum.zip(serv_alm, maquinas), into: %{} do     
+                      {String.to_atom(s),
+                       ServidorSA.startNodo(s, m)}
+                  end
+                  
+        # Poner en marcha servicios de cada nodo servidor de almacenamiento
+        for { _, n} <- servAlm do
+            ServidorSA.startService(n, sv)
+            #Process.sleep(60)
+        end
+    
+        #Tiempo de puesta en marcha de nodos
+        t_total = :os.system_time(:milli_seconds) - tiempo_antes
+        IO.puts("Tiempo puesta en marcha de nodos  : #{t_total}")
+    end
+
     
     defp stopServidores(nodos, maquinas) do
         IO.puts "Finalmente eliminamos nodos"

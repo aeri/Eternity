@@ -63,31 +63,37 @@ defmodule ServidorSA do
 
                     # Solicitudes de lectura y escritura
                     # de clientes del servicio alm.
-                {op, param, nodo_origen} ->
+                {op, param, pid_origen} ->
 			if Node.self() == vista.primario do
 				case op do
 					:lee ->
 						valor = bbdd[param]
-                    				send {:cliente_sa, nodo_origen}, {:resultado, valor}
+                    				send pid_origen, {:resultado, valor}
 						{bbdd, vista, nodo_servidor_gv}
 					:escribe_generico ->
 						{clave, valor, _} = param
-						newbbdd = Map.put(bbdd, clave, valor)
-						IO.puts "Datos escritos en el primario"
-						IO.inspect newbbdd
-						# Se copian los cambios al nodo copia
-						send {:servidor_sa, vista.copia}, {newbbdd, self()}
-						receive do
-							{:check} ->
-								send {:cliente_sa, nodo_origen}, {:resultado, valor}
-								{newbbdd, vista, nodo_servidor_gv}
-						after @intervalo_latido ->
+						if bbdd[clave] == valor do
+							IO.puts "Operación repetida: no se realiza la operacion"
+							send pid_origen, {:resultado, valor}
 							{bbdd, vista, nodo_servidor_gv}
+						else
+							newbbdd = Map.put(bbdd, clave, valor)
+							IO.puts "Datos escritos en el primario"
+							IO.inspect newbbdd
+							# Se copian los cambios al nodo copia
+							send {:servidor_sa, vista.copia}, {newbbdd, self()}
+							receive do
+								{:check} ->
+									send pid_origen, {:resultado, valor}
+									{newbbdd, vista, nodo_servidor_gv}
+							after @intervalo_latido ->
+								{bbdd, vista, nodo_servidor_gv}
+							end
 						end
 				end
 			else
 				IO.puts "Soy un nodo copia"
-                    		send nodo_origen, {:resultado, :no_soy_primario_valido}
+                    		send pid_origen, {:resultado, :no_soy_primario_valido}
 				{bbdd, vista, nodo_servidor_gv}
 			end
 

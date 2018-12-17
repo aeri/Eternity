@@ -76,9 +76,14 @@ defmodule ServidorSA do
 						IO.puts "Datos escritos en el primario"
 						IO.inspect newbbdd
 						# Se copian los cambios al nodo copia
-						send {:servidor_sa, vista.copia}, {:copy_paste, newbbdd}
-                    				send {:cliente_sa, nodo_origen}, {:resultado, valor}
-						{newbbdd, vista, nodo_servidor_gv}
+						send {:servidor_sa, vista.copia}, {newbbdd, self()}
+						receive do
+							{:check} ->
+								send {:cliente_sa, nodo_origen}, {:resultado, valor}
+								{newbbdd, vista, nodo_servidor_gv}
+						after @intervalo_latido ->
+							{bbdd, vista, nodo_servidor_gv}
+						end
 				end
 			else
 				IO.puts "Soy un nodo copia"
@@ -86,18 +91,18 @@ defmodule ServidorSA do
 				{bbdd, vista, nodo_servidor_gv}
 			end
 
-		{:copy_paste, database} ->
+		{database, primario_pid} ->
 			IO.puts "Datos recibidos de la base"
 			IO.inspect database
+			send primario_pid, {:check}
 			{database, vista, nodo_servidor_gv} 
 
 		:enviar_latido ->
 			{:vista_tentativa, newvista, _} = ClienteGV.latido(nodo_servidor_gv, vista.num_vista)
 			if vista.num_vista != newvista.num_vista and newvista.primario != :undefined and newvista.copia != :undefined and newvista.primario == Node.self() do
-			#if vista.copia == Node.self() and newvista.primario == Node.self() do
 				IO.puts "Copiando de primario a copia la base de datos"
 				IO.puts newvista.copia
-				send {:servidor_sa, newvista.copia}, {:copy_paste, bbdd}
+				send {:servidor_sa, newvista.copia}, {bbdd, self()}
 			end
 			{bbdd, newvista, nodo_servidor_gv}
                	end

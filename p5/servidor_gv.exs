@@ -267,13 +267,13 @@ defmodule ServidorGV do
           end
 
         {:obten_vista, pid} ->
-	  #IO.puts "Tentativa"
-	  #IO.puts tentativa.num_vista
-	  #IO.puts tentativa.primario
+          # IO.puts "Tentativa"
+          # IO.puts tentativa.num_vista
+          # IO.puts tentativa.primario
 
-	  #IO.puts "Valida"
-	  #IO.puts valida.num_vista
-	  #IO.puts valida.primario
+          # IO.puts "Valida"
+          # IO.puts valida.num_vista
+          # IO.puts valida.primario
 
           send(pid, {:vista_valida, valida, tentativa == valida})
           {tentativa, valida, primario, copia, nodosespera}

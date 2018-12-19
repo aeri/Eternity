@@ -51,6 +51,7 @@ defmodule NodoRemoto do
     # resultado rpc puede ser cualquier valor
     # El correcto es el nombre del modulo
     moduRemoto = :rpc.call(nodo, modulo, :__info__, [:module], @timeout_rpc)
+
     if moduRemoto != modulo, do: esperaNodoOperativo(nodo, modulo)
   end
 end

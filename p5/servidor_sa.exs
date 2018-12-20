@@ -87,7 +87,8 @@ defmodule ServidorSA do
             ClienteGV.latido(nodo_servidor_gv, vista.num_vista)
 
           if vista.num_vista != newvista.num_vista and
-               newvista.copia != :undefined and newvista.primario == Node.self() do
+               newvista.copia != :undefined and
+               newvista.primario == Node.self() do
             # Si cambia el número de vista, soy el primario y hay un nodo copia
             # se copia la base al nodo copia
             IO.puts("Copiando de primario a copia la base de datos")

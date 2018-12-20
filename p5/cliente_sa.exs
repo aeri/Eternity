@@ -58,7 +58,8 @@ defmodule ClienteSA do
      La especificación del interfaz de la función es la siguiente :
                           (se puede utilizar también para "dialyzer")
   """
-  @spec escribe_generico(node(), String.t(), String.t(), boolean) :: String.t()
+  @spec escribe_generico(node(), String.t(), String.t(), boolean) ::
+          String.t()
   def escribe_generico(nodo_cliente, clave, nuevo_valor, con_hash) do
     send(
       {:cliente_sa, nodo_cliente},
